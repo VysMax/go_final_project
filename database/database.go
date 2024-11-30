@@ -6,8 +6,6 @@ import (
 	"os"
 )
 
-// }
-
 func ConnectDB(dbFilePath string) *sql.DB {
 	db, err := sql.Open("sqlite", dbFilePath)
 	if err != nil {
@@ -36,7 +34,7 @@ func CreateDB(dbName string) *sql.DB {
 	}
 	table.Exec()
 
-	table, err = db.Prepare("CREATE INDEX scheduler_date ON scheduler (date)")
+	table, err = db.Prepare("CREATE INDEX IF NOT EXISTS scheduler_date ON scheduler (date)")
 	if err != nil {
 		log.Fatal(err)
 	}

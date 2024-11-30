@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"VysMax/internalfunc"
-	"VysMax/models"
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"VysMax/internalfunc"
+	"VysMax/models"
 )
 
 func (h *Handler) MarkAsDone(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +29,7 @@ func (h *Handler) MarkAsDone(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		err = h.repo.UpdateDate(updatedTask)
+		err = h.repo.UpdateTask(updatedTask)
 		if err != nil {
 			result.Error = "Задача не найдена"
 		}
@@ -41,5 +42,5 @@ func (h *Handler) MarkAsDone(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, _ = w.Write(resp)
 }

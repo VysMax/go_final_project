@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"VysMax/models"
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"os"
+
+	"VysMax/models"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -49,5 +50,5 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, _ = w.Write(resp)
 }

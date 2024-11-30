@@ -2,51 +2,30 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"VysMax/DBManip"
 	"VysMax/database"
 	"VysMax/handlers"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	_ "modernc.org/sqlite"
 )
 
-func auth(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pass := os.Getenv("TODO_PASSWORD")
-		if len(pass) > 0 {
-			var jwtFromCookie string
-
-			cookie, err := r.Cookie("token")
-			if err == nil {
-				jwtFromCookie = cookie.Value
-			}
-
-			secret := []byte("peacock")
-
-			jwtToken := jwt.New(jwt.SigningMethodHS256)
-
-			signedToken, err := jwtToken.SignedString(secret)
-			if err != nil {
-				http.Error(w, "failed to sign jwt", http.StatusUnauthorized)
-			}
-
-			if signedToken != jwtFromCookie {
-				http.Error(w, "Authentification required", http.StatusUnauthorized)
-				return
-			}
-		}
-		next(w, r)
-	})
-}
-
 func main() {
 	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	portNum := os.Getenv("TODO_PORT")
+	pass := os.Getenv("TODO_PASSWORD")
+
+	signedToken, err := handlers.SignToken(pass)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,25 +40,33 @@ func main() {
 	var db *sql.DB
 
 	switch err == nil {
-	case false:
-		db = database.CreateDB(os.Getenv("TODO_DBFILE"))
 	case true:
-		db = database.ConnectDB(os.Getenv("TODO_DBFILE"))
+		db = database.ConnectDB(dbFile)
+	case false:
+		db = database.CreateDB(dbFile)
 	}
 
-	repo := DBManip.NewRepository(db)
+	repo := database.NewRepository(db)
 	handler := handlers.NewHandler(repo)
 	defer db.Close()
 
-	http.Handle("/*", http.FileServer(http.Dir("./web")))
-	http.HandleFunc("/api/nextdate", handler.GetNextDate)
-	http.HandleFunc("/api/task", auth(handler.OneTaskHandler))
-	http.HandleFunc("/api/tasks", auth(handler.GetTasks))
-	http.HandleFunc("/api/task/done", auth(handler.MarkAsDone))
-	http.HandleFunc("/api/signin", handler.SignIn)
+	r := chi.NewRouter()
+	r.Handle("/*", http.FileServer(http.Dir("./web")))
 
-	err = http.ListenAndServe(":"+os.Getenv("TODO_PORT"), nil)
+	r.Post("/api/signin", handler.SignIn)
+	r.Get("/api/nextdate", handler.GetNextDate)
+	r.Get("/api/task", handlers.Auth(handler.GetOneTask, signedToken))
+	r.Post("/api/task", handlers.Auth(handler.PostOneTask, signedToken))
+	r.Put("/api/task", handlers.Auth(handler.PutOneTask, signedToken))
+	r.Delete("/api/task", handlers.Auth(handler.DeleteOneTask, signedToken))
+	r.Get("/api/tasks", handlers.Auth(handler.GetTasks, signedToken))
+	r.Post("/api/task/done", handlers.Auth(handler.MarkAsDone, signedToken))
+
+	fmt.Printf("Сервер запущен на порту %s\n", portNum)
+
+	err = http.ListenAndServe(":"+portNum, r)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }

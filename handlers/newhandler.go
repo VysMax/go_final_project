@@ -1,12 +1,12 @@
 package handlers
 
-import "VysMax/DBManip"
+import "VysMax/database"
 
 type Handler struct {
-	repo *DBManip.Repository
+	repo *database.Repository
 }
 
-func NewHandler(repo *DBManip.Repository) *Handler {
+func NewHandler(repo *database.Repository) *Handler {
 	return &Handler{
 		repo: repo,
 	}

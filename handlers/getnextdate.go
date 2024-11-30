@@ -12,7 +12,7 @@ func (h *Handler) GetNextDate(w http.ResponseWriter, r *http.Request) {
 	date := r.FormValue("date")
 	repeat := r.FormValue("repeat")
 
-	parsedNow, err := time.Parse("20060102", now)
+	parsedNow, err := time.Parse(internalfunc.Layout, now)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -21,5 +21,5 @@ func (h *Handler) GetNextDate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	w.Write([]byte(newTime))
+	_, _ = w.Write([]byte(newTime))
 }
